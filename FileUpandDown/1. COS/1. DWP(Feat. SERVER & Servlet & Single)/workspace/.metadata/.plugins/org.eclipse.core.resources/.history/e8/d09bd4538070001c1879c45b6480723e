@@ -1,0 +1,11 @@
+package file;
+
+public class Query {
+
+	final static String FILE_UPLOAD = "INSERT INTO FILETEST(FILENAME, FILEREALNAME, EXTENTION, FILESIZE, DOWNCOUNT)"
+			+ "VALUES(?, ?, ?, ?, 0)";
+	
+	final static String FILE_DOWN_COUNT_UP = "UPDATE FILETEST SET DOWNCOUNT = DOWNCOUNT + 1"
+			+ "WHERE FILEREALNAME = ?";
+	
+}

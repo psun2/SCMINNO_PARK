@@ -1,0 +1,35 @@
+<%@page import="file.FileDTO"%>
+<%@page import="java.util.ArrayList"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>파일 업 & 다운로드</title>
+</head>
+<body>
+	<h1>다운로드 페이지</h1>
+	<%
+		ArrayList<FileDTO> fileList = (ArrayList) request.getAttribute("fileList");
+		
+		for(FileDTO file : fileList) {
+			out.write("<a href=\"/download?file=" + file.getFileName() + "\">"
+						+ "<span>"
+						+ file.getFileRealName()
+						+ "</span>"
+						+ "<span>&nbsp;"
+						+ "다운로드 횟수: "
+						+ file.getDownCount()
+						+ " 회"
+						+ "</span>"
+						+ "<span>&nbsp;"
+						+ "파일크기: "
+						+ file.getFileSize()
+						+ "byte"
+						+ "</span>"
+						+ "</a>");
+		}
+	%>
+</body>
+</html>

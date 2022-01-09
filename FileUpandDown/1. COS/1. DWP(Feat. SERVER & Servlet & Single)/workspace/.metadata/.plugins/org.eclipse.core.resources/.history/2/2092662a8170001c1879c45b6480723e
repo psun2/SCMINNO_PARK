@@ -1,0 +1,23 @@
+package file;
+
+import java.sql.Connection;
+
+public class FileDAO {
+	
+	private Connection con;
+	private String dbURL;
+	private String dbID;
+	private String dbPassword;
+
+	public FileDAO() {
+		super();
+		this.dbURL = "jdbc:sqlserver://127.0.0.1:1433;databasenanme=STUDY";
+		this.dbID = "sa";
+		this.dbPassword = "mssql";
+		
+		Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+	}
+	
+	
+
+}

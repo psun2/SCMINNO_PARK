@@ -1,0 +1,167 @@
+package service;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.util.ArrayList;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.oreilly.servlet.MultipartRequest;
+import com.oreilly.servlet.multipart.DefaultFileRenamePolicy;
+
+import file.FileDAO;
+import file.FileDTO;
+
+public class FileService {
+
+	FileDAO dao;
+	FileDTO dto;
+	
+	public FileService() {
+		super();
+		dao = new FileDAO();
+		dto = new FileDTO();
+	}
+	
+	// 업로드
+	public void upload(HttpServletRequest request) {
+		
+		System.out.println("Service Path: " + request.getServletContext().getRealPath("/"));
+		// 실제 서버의 물리적 경로
+		// C:\Users\parksungun\Desktop\test\1. COS\1. Dynamic Web Project(Feat. SERVER & Servlet & Single)\workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\FileUpandDown\
+		
+		String direction = request.getServletContext().getRealPath("/upload/"); // 서버내 실제 경로의 upload폴더를 지칭합니다.
+		int fileMaxSize = 1024 * 1024 * 100; // 100MB
+		String enCoding = "UTF-8";
+		
+		// 서버의 해당 디렉토리에 이미 파일 업로드가 끝난 상태(MultipartRequest 객체 생성시)
+		try {
+			MultipartRequest multipartRequest = 
+					new MultipartRequest(request, direction, fileMaxSize, enCoding, new DefaultFileRenamePolicy());
+			
+			// 중복된 이름이 있다면 DefaultFileRenamePolicy 객체를 통해 변경된 이름 획득
+			String fileName = multipartRequest.getFilesystemName("file"); // file => input type="file" 의 name 값
+			
+			// 사용자가 업로드한 진짜 파일명
+			String fileRealName = multipartRequest.getOriginalFileName("file"); // file => input type="file" 의 name 값
+			String extention = fileRealName.substring(fileRealName.lastIndexOf(".") + 1);
+			long fileSize = multipartRequest.getFile("file").length();
+			
+			// DB Insert
+			dao.upload(fileName, fileRealName, extention, fileSize);
+			
+			// 다운로드 list 페이지 이동을 위한 database SELECT
+			ArrayList<FileDTO> fileList = dao.getUploadList();
+			request.setAttribute("fileList", fileList);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	} // end upload()
+	
+	// 다운로드 list
+	public ArrayList<FileDTO> getFileList() {
+		return dao.getUploadList();
+	} // end getFileList()
+	
+	// 다운로드 서비스
+	public void download(HttpServletRequest request, HttpServletResponse response) {
+		try {
+			// downloadList.jsp에서 a태그의 주소를 살펴보면
+			// <a href="/download?file=%ED%8C%8C%EC%9D%BC%EC%97%85%EB%A1%9C%EB%93%9C+TEST.txt"><span>파일업로드 TEST.txt</span><span>&nbsp;다운로드 횟수: 0 회</span><span>&nbsp;파일크기: 37byte</span></a>
+			// 인코딩 된 파일명으로 file이란 이름으로 보내주고 있습니다. 보내주는 파라미터를 받아 보도록 하겠습니다.
+			String fileName = request.getParameter("file"); // 서버 업로드 폴더에 업로드 DefaultFileRenamePolicy 로 변경된 이름을 받아 옵니다.
+			
+			// 인코딩 된 파일명을 받았으니 디코딩을 시켜 파일명을 복호화 합니다.
+			fileName = URLDecoder.decode(fileName, "UTF-8");
+			
+			// file명은 위를 통해 취득했으니 이제 업로드된 서버의 실제 경로를 설정합니다.  
+			String direction = request.getServletContext().getRealPath("/upload/");
+			
+			// 서버에 업로드된 실제 경로와 파일명을 + 하여 조합합니다.
+			StringBuffer sb = new StringBuffer();
+			sb.append(direction);
+			sb.append(fileName);
+			String filePath = sb.toString();
+			
+			File file = new File(filePath);
+			
+			// 이제 서버의 물리적 경로에 있는 파일 명 즉 DefaultFileRenamePolicy객체로 변경된 파일명으로 다운로드시켜 주는 것이 아닌
+			// 사용자가 실제 업로드 한 파일명으로 변경해 줍니다.
+			// 먼저 이때 upload폴더에서 파일명 변경시에 파일명이 바뀌면서 같은 파일이 있다면
+			// 파일이 변경되는 치명적인 오류가 발생할 수 있습니다.
+			// 이를 위해 사용자별 특정한 폴더를 생성해 그 안에서 파일의 명을 변경 할 수 있도록 합니다.
+			System.out.println(fileName);
+			String fileRealName = dao.getFileRealName(fileName);
+			System.out.println("fileRealName dao : " + fileRealName);
+			String realDirection = request.getServletContext().getRealPath("/");
+			
+			// 실제 운영중인 서비스에서는 사용자의 ID로 폴더를 생성해 그 안에서 파일명을 변경할 수 있지만,
+			// 이 학습에서는 로그인 기능이 없으므로 거의 겹칠일이 없는 현재 밀리세컨드를 구해 그 명으로 폴더를 만들어
+			// 파일의 명을 변경합니다.
+			long timeStamp = System.currentTimeMillis();
+			
+			File serverDownloadDirection = new File(realDirection + timeStamp);
+			if(!serverDownloadDirection.exists()) {
+				serverDownloadDirection.mkdir();
+			}
+			File realFile = new File(realDirection + timeStamp + "/" + fileRealName);
+			realFile.createNewFile();
+			Files.copy(file.toPath(), realFile.toPath());
+			
+			
+			// 어떤한 정보를 주고 받는지에 대한 response(응답)에 대한 contentType setting
+			String mimeType = request.getServletContext().getMimeType(file.toString());
+			if(mimeType == null) {
+				// application/octet-seream => 파일관련 정보를 주고 받는 ContentType
+				response.setContentType("application/octet-seream");
+			}
+			
+			// 사용자에게 파일을 다운로드 받을시 다시 파일명을 해당 플랫폼에 따라 인코딩 시켜줄수 있도록 encoding을 설정합니다.
+			// 여기서 플랫폼이란 IE, 엣지, 크롬 등을 의미 합니다.
+			String downloadName = null;
+			// 요청온 해더의 유저정보에서 확일 할 수 있습니다.
+			if(request.getHeader("user-agent").indexOf("MISE") != -1) { // MSIE = IE
+				// -1 이 아니라면... 즉, 익스플로러가 아니라면
+				downloadName = new String(fileName.getBytes("UTF-8"), "8859_1"); // 8859_1 : encoding 방식의 한 종류
+			} else { // 익스플로러 라면....
+				downloadName = new String(fileName.getBytes("EUC-KR"), "8859_1"); // 8859_1 : encoding 방식의 한 종류
+			}
+			
+			System.out.println("fileRealName : " + fileRealName);
+			downloadName = new String(fileRealName.getBytes("UTF-8"), "8859_1");
+			
+			// response(응답)에 대한 header setting
+			sb = new StringBuffer();
+			sb.append("attachment;filename=\"");
+			sb.append(downloadName);
+			sb.append("\"");
+			String contentDisposition = sb.toString();
+			response.setHeader("Content-Disposition", contentDisposition);
+			
+			// 실제로 Stream을 사용하며 사용자 컴퓨터에 다운로드
+			FileInputStream fis = new FileInputStream(file);
+			OutputStream os = response.getOutputStream();
+			
+			// Stream은 byte단위로 1024byte로 쪼개서 보낼 수 있도록 합니다.
+			byte[] tempFile = new byte[1024];
+			int data = 0;
+			while((data = fis.read(tempFile, 0, tempFile.length)) != -1) {
+				os.write(tempFile, 0, data);
+			}
+
+			// Stream 종료
+			os.flush();
+			os.close();
+			fis.close();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+	} // download()
+}

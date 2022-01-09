@@ -1,0 +1,54 @@
+package Service;
+
+import java.io.IOException;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.oreilly.servlet.MultipartRequest;
+import com.oreilly.servlet.multipart.DefaultFileRenamePolicy;
+
+import file.FileDAO;
+import file.FileDTO;
+
+public class FileService {
+
+	FileDAO dao;
+	FileDTO dto;
+	
+	public FileService() {
+		super();
+		dao = new FileDAO();
+		dto = new FileDTO();
+	}
+	
+	public void upload(HttpServletRequest request) {
+		
+		System.out.println("Service Path: " + request.getServletContext().getRealPath("/"));
+		// 실제 서버의 물리적 경로
+		// C:\Users\parksungun\Desktop\test\1. COS\1. Dynamic Web Project(Feat. SERVER & Servlet & Single)\workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\FileUpandDown\
+		
+		String direction = request.getServletContext().getRealPath("/upload/"); // 서버내 실제 경로의 upload폴더를 지칭합니다.
+		int fileMaxSize = 1024 * 1024 * 100; // 100MB
+		String enCoding = "UTF-8";
+		
+		// 서버의 해당 디렉토리에 이미 파일 업로드가 끝난 상태(MultipartRequest 객체 생성시)
+		try {
+			MultipartRequest multipartRequest = 
+					new MultipartRequest(request, direction, fileMaxSize, enCoding, new DefaultFileRenamePolicy());
+			
+			// 사용자가 업로드한 진짜 파일명
+			String fileName = multipartRequest.getOriginalFileName("file"); // file => input type="file" 의 name 값
+			
+			// 중복된 이름이 있다면 DefaultFileRenamePolicy 객체를 통해 변경된 이름 획득
+			String fileRealName = multipartRequest.getFilesystemName("file"); // file => input type="file" 의 name 값
+			String extention = fileRealName.substring(fileRealName.lastIndexOf(".") + 1);
+			long fileSize = multipartRequest.getFile("file").length();
+			
+			// DB Insert
+			dao.upload(fileName, fileRealName, extention, fileSize);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+}

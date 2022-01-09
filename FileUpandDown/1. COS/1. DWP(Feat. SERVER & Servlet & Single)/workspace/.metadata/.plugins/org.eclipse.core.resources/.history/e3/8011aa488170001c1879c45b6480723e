@@ -1,0 +1,30 @@
+package file;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class FileDAO {
+	
+	private Connection con;
+	private String dbURL;
+	private String dbID;
+	private String dbPassword;
+
+	public FileDAO() {
+		super();
+		this.dbURL = "jdbc:sqlserver://127.0.0.1:1433;databasenanme=STUDY";
+		this.dbID = "sa";
+		this.dbPassword = "mssql";
+		
+		try {
+			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver"); // 해당 SQL Conncetion 라이브러리의 클래스를 찾을 수 있도록 로드
+			this.con = DriverManager.getConnection(dbURL, dbID, dbPassword);
+		} catch (ClassNotFoundException | SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+
+}
