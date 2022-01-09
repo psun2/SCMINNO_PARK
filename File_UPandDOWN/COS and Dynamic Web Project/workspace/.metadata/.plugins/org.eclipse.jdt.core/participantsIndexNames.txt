@@ -1,5 +1,0 @@
-INDEX VERSION 1.131
-D:\File_UPandDOWN\COS and Dynamic Web Project\workspace\.metadata\.plugins\org.eclipse.jst.jsp.core\jspsearch\1164910438.index
-\File Upload\src\main\java
-D:\File_UPandDOWN\COS\workspace\.metadata\.plugins\org.eclipse.jst.jsp.core\jspsearch\1164910438.index
-\File Upload\src\main\java
