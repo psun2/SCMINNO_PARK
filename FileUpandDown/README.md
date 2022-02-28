@@ -47,17 +47,13 @@ MODULE: Dynamic Web Project, Spring
 
    - Dynamic Web Project(Servlet Programing)로 <b>[서버]</b>에 싱글 파일 업로드 & 다운로드 구현
    - Dynamic Web Project(Servlet Programing)로 <b>[DB]</b>에 싱글 파일 업로드 & 다운로드 구현
-   - Spring FrameWork로 <b>[서버]</b>에 멀티 파일 업로드 & 다운로드 구현
-   - Spring FrameWork로 <b>[DB]</b>에 멀티 파일 업로드 & 다운로드 구현
-   - Bonus: js라이브러리 fetch를 이용한 비동기 통신으로 서버에 파일 업로드 & 다운로드 구현
+   - Dynamic Web Project(Servlet Programing)로 <b>[서버]</b>에 비동기방식(AJAX[fetch]) 멀티 파일 업로드 & 멀티 다운로드(알집 압축방식) 구현
 
 2. commons 라이브러리
 
-   - Dynamic Web Project(Servlet Programing)로 <b>[서버]</b>에 싱글 파일 업로드 & 다운로드 구현
-   - Dynamic Web Project(Servlet Programing)로 <b>[DB]</b>에 싱글 파일 업로드 & 다운로드 구현
    - Spring FrameWork로 <b>[서버]</b>에 멀티 파일 업로드 & 다운로드 구현
    - Spring FrameWork로 <b>[DB]</b>에 멀티 파일 업로드 & 다운로드 구현
-   - Bonus: js라이브러리 fetch를 이용한 비동기 통신으로 서버에 파일 업로드 & 다운로드 구현
+   - Spring FrameWork로 <b>[서버]</b>에 비동기방식(AJAX[fetch]) 멀티 파일 업로드 & 멀티 다운로드(알집 압축방식) 구현
 
 3. Jquery / SCM FrameWork
    - Spring FrameWork로 <b>[서버]</b>에 멀티 파일 업로드 & 다운로드 구현
