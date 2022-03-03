@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Enumeration;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,7 +35,7 @@ public class FileService {
 		// 실제 서버의 물리적 경로
 		// D:\park\SCMINNO_PARK\FileUpandDown\1. COS\3. DWP(Feat. DB & Servlet & Multi(ZIP) & AJAX)\workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\FileUpandDown\
 		
-		String direction = request.getServletContext().getRealPath("upload/"); // 서버내 실제 경로의 upload폴더를 지칭합니다.
+		String direction = request.getServletContext().getRealPath("upload"); // 서버내 실제 경로의 upload폴더를 지칭합니다.
 		// String direction = "서버컴퓨터의 local의 사용자 임의 업로드 폴더 경로 설정 하여 보안을 적용 할 수 있습니다.";
 		int fileMaxSize = 1024 * 1024 * 100; // 100MB
 		String enCoding = "UTF-8";
@@ -44,24 +45,32 @@ public class FileService {
 			MultipartRequest multipartRequest = 
 					new MultipartRequest(request, direction, fileMaxSize, enCoding, new DefaultFileRenamePolicy());
 			
-			// 중복된 이름이 있다면 DefaultFileRenamePolicy 객체를 통해 변경된 이름 획득
-			String fileName = multipartRequest.getFilesystemName("file"); // file => input type="file" 의 name 값
+			// 반복문을 통하여 db insert
+			Enumeration<String> enumerration = multipartRequest.getFileNames();
 			
-			// 보안코딩 추가
-			if(fileName.endsWith(".jsp") || fileName.endsWith(".js")) {
-				File file = multipartRequest.getFile("file");
-				file.delete();
-				return;
+			while(enumerration.hasMoreElements()) {
+				String parameterName = (String) enumerration.nextElement();
+				
+				// 중복된 이름이 있다면 DefaultFileRenamePolicy 객체를 통해 변경된 이름 획득
+				String fileName = multipartRequest.getFilesystemName(parameterName); // file => input type="file" 의 name 값
+				
+				if(fileName != null) {
+					// 보안코딩 추가
+					if(fileName.endsWith(".jsp") || fileName.endsWith(".js")) {
+						File file = multipartRequest.getFile(parameterName);
+						file.delete();
+						continue;
+					}
+					
+					// 사용자가 업로드한 진짜 파일명
+					String fileRealName = multipartRequest.getOriginalFileName(parameterName); // file => input type="file" 의 name 값
+					String extention = fileRealName.substring(fileRealName.lastIndexOf(".") + 1);
+					long fileSize = multipartRequest.getFile(parameterName).length();
+					
+					// DB Insert
+					dao.upload(fileName, fileRealName, extention, fileSize);
+				}
 			}
-			
-			// 사용자가 업로드한 진짜 파일명
-			String fileRealName = multipartRequest.getOriginalFileName("file"); // file => input type="file" 의 name 값
-			String extention = fileRealName.substring(fileRealName.lastIndexOf(".") + 1);
-			long fileSize = multipartRequest.getFile("file").length();
-			
-			// DB Insert
-			dao.upload(fileName, fileRealName, extention, fileSize);
-			
 			// 다운로드 list 페이지 이동을 위한 database SELECT
 			ArrayList<FileDTO> fileList = dao.getUploadList();
 			request.setAttribute("fileList", fileList);
@@ -88,12 +97,14 @@ public class FileService {
 			fileName = URLDecoder.decode(fileName, "UTF-8");
 			
 			// file명은 위를 통해 취득했으니 이제 업로드된 서버의 실제 경로를 설정합니다.  
-			String direction = request.getServletContext().getRealPath("upload/");
+			String direction = request.getServletContext().getRealPath("/");
 			// String direction = "서버컴퓨터의 local의 사용자 임의 업로드 폴더 경로 설정 하여 보안을 적용 할 수 있습니다.";
 			
 			// 서버에 업로드된 실제 경로와 파일명을 + 하여 조합합니다.
 			StringBuffer sb = new StringBuffer();
 			sb.append(direction);
+			sb.append("upload");
+			sb.append(File.separator);
 			sb.append(fileName);
 			String filePath = sb.toString();
 			
@@ -152,5 +163,49 @@ public class FileService {
 			e.printStackTrace();
 		}
 	} // download()
-
+	
+	// pdf file view 
+	public void pdfViewer(HttpServletRequest request, HttpServletResponse response) {
+		FileInputStream fileInputStream = null;
+		OutputStream outputStream = null;
+		try {
+			String fileName = request.getParameter("fileRealName"); // 서버 업로드 폴더에 업로드 DefaultFileRenamePolicy 로 변경된 이름을 받아 옵니다.
+			
+			// 인코딩 된 파일명을 받았으니 디코딩을 시켜 파일명을 복호화 합니다.
+			fileName = URLDecoder.decode(fileName, "UTF-8");
+			
+			// file명은 위를 통해 취득했으니 이제 업로드된 서버의 실제 경로를 설정합니다.  
+			String direction = request.getServletContext().getRealPath("/");
+			// String direction = "서버컴퓨터의 local의 사용자 임의 업로드 폴더 경로 설정 하여 보안을 적용 할 수 있습니다.";
+			
+			// 서버에 업로드된 실제 경로와 파일명을 + 하여 조합합니다.
+			StringBuffer sb = new StringBuffer();
+			sb.append(direction);
+			sb.append("upload");
+			sb.append(File.separator);
+			sb.append(fileName);
+			String filePath = sb.toString();
+			
+			File file = new File(filePath);
+			
+			// pdf 파일을 보여 주기위한 response setting
+			response.setContentType("application/pdf");
+			response.setHeader("Content-Description", "JSP Generated Data");
+			
+			response.flushBuffer();
+			
+			fileInputStream = new FileInputStream(file);
+			outputStream = response.getOutputStream();
+			
+			int read = -1;
+			byte[] buffer = new byte[1024];
+			while((read = fileInputStream.read(buffer, 0, buffer.length)) >= 0) {
+				outputStream.write(buffer, 0, buffer.length);
+			}
+			outputStream.flush();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	} // end pdfViewer()
+	
 }

@@ -9,7 +9,11 @@
 <body>
 	<form action="Upload" method="post" enctype="multipart/form-data">
 		<label>
-			파일:&nbsp;<input type="file" name="file" />
+			파일:&nbsp;<input type="file" name="file0" />
+		</label>
+		<br />
+		<label>
+			파일:&nbsp;<input type="file" name="file1" />
 		</label>
 		<br />
 		<label>
@@ -22,10 +26,6 @@
 		<br />
 		<label>
 			파일:&nbsp;<input type="file" name="file4" />
-		</label>
-		<br />
-		<label>
-			파일:&nbsp;<input type="file" name="file5" />
 		</label>
 		<br />
 		<button type="submit">submit 전송</button>
