@@ -14,4 +14,8 @@ public class Query {
 	
 	// 파일의 실제명 SELECT
 	public final static String FILE_REAL_NAME = "SELECT FILEREALNAME FROM FILETEST WHERE FILENAME = ?";
+	
+	// 파일 다운로드 임시테이블 INSERT
+	public final static String FILE_DOWN_TEMP_INSERT = "INSERT INTO FILEDOWNTEST(SEQ, FILEREALNAMES)"
+			+ "VALUES((SELECT ISNULL(CAST(SEQ AS BIGINT), 0) + 1 FROM FILEDOWNTEST), ?)";
 }

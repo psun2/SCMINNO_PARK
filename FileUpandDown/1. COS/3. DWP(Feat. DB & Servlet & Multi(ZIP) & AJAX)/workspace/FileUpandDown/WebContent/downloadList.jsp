@@ -11,6 +11,8 @@
 </head>
 <body>
 	<h1>다운로드 페이지</h1>
+	<button onclick="allDownload();">전체 다운로드(압축)</button>
+	<div id="box">
 	<%
 		ArrayList<FileDTO> fileList = (ArrayList) request.getAttribute("fileList");
 		
@@ -82,12 +84,44 @@
 			response.sendRedirect("/fileList"); // list를 반환하는 servlet에 접근 후 redirection
 		}
 	%>
+	</div>
 	<script>
 		function handlePdf(fileName, fileRealName) {
 			window.fileName = fileName;
 			window.fileRealName = fileRealName;
 			window.open('/pdfViewer.jsp', '_BLANK');
-		}
+		} // end handlePdf()
+		
+		function allDownload() {
+			let boxAList = Array.from(document.querySelectorAll('#box a'));
+			
+			let fileNamesStr = '';
+			let fileNamesArr = [];
+			for(var i = 0; i < boxAList.length; i++) {
+				let fileRealName = boxAList[i].firstChild.innerText;
+				
+				fileNamesArr.push(fileRealName);
+				fileNamesStr += fileRealName;
+				if(i < boxAList.length - 1) fileNamesStr += ',';
+			}
+			
+			let data = {FILENAMESSTR: fileNamesStr, FILEREALNAMESARR: fileNamesArr};
+			
+			let url = '/createMultiDownList';
+			let fetchOption = {method: 'post'};
+			fetchOption.body = JSON.stringify(data);
+			
+			fetch(url, fetchOption) //
+			.then((response) => {
+				console.log(response);
+			}) //
+			.then((json) => {
+				
+			}) //
+			.catch((e) => {
+				console.error(e);
+			})
+		} // end allDownload()
 	</script>
 </body>
 </html>

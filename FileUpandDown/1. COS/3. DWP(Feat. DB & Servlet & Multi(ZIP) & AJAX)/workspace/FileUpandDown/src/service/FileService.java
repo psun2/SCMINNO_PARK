@@ -1,5 +1,6 @@
 package service;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -7,6 +8,7 @@ import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -208,4 +210,34 @@ public class FileService {
 		}
 	} // end pdfViewer()
 	
+	// 다중 다운로드 전 GET방식으로 보내는 다운로드 특성상 URL의 길이가 초과 될 수 있는 에러 발생 확률이 있음
+	// 이를 방지하기 위하여 GET방식으로 보낼 param을 post방식으로 미리 TEMP table에 insert 합니다
+	public void createMultiDownload(HttpServletRequest request, HttpServletResponse response) {
+		try {
+			BufferedReader bufferedReader =  request.getReader();
+			String readLine = null;
+			StringBuilder json = new StringBuilder();
+			while((readLine = bufferedReader.readLine()) != null) {
+				System.out.println("readLine: " + readLine);
+				json.append(readLine);
+			}
+			
+			String[] parameters = json.toString().split(":");
+			HashMap<String, String> param = new HashMap<String, String>();
+			String key = null;
+			for(int i = 0; i < parameters.length; i++) {
+				if(i % 2 == 0) { // 짝수는 key
+					key = parameters[i].replace("\"", "").replace("{", "").replace("}", "");
+				} else { // 홀수는 value
+					if(!key.equals("") && key != null) {
+						param.put(key, parameters[i].replace("\"", ""));
+					}
+				}
+			}
+			
+			System.out.println(param);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	} // end createMultiDownload()
 }
