@@ -16,7 +16,7 @@ import service.FileService;
 /**
  * Servlet implementation class FileList
  */
-@WebServlet("/fileList1")
+@WebServlet("/fileList")
 public class FileList extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
