@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -218,26 +220,78 @@ public class FileService {
 			String readLine = null;
 			StringBuilder json = new StringBuilder();
 			while((readLine = bufferedReader.readLine()) != null) {
-				System.out.println("readLine: " + readLine);
 				json.append(readLine);
 			}
 			
-			String[] parameters = json.toString().split(":");
-			HashMap<String, String> param = new HashMap<String, String>();
-			String key = null;
-			for(int i = 0; i < parameters.length; i++) {
-				if(i % 2 == 0) { // 짝수는 key
-					key = parameters[i].replace("\"", "").replace("{", "").replace("}", "");
-				} else { // 홀수는 value
-					if(!key.equals("") && key != null) {
-						param.put(key, parameters[i].replace("\"", ""));
-					}
-				}
-			}
-			
-			System.out.println(param);
+			Map<String, Object> param = getParamters(json.toString());
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	} // end createMultiDownload()
+	
+	private Map<String, Object> getParamters(String json) {
+		Map<String, Object> params = new HashMap<String, Object>();
+		System.out.println(json);
+		try {
+			// {} 첫번째와 마지막 괄호 지움
+			String replaceJson = json.substring(json.indexOf("{") + 1);
+			replaceJson = replaceJson.substring(0, replaceJson.lastIndexOf("}"));
+			
+			String[] parameters = new String[0];
+			
+			String[] sliptParameter = replaceJson.split(":");
+			System.out.println("sliptParameter : " + Arrays.toString(sliptParameter));
+			for(int i = 0; i < sliptParameter.length; i++) {
+				if(sliptParameter[i].indexOf(",") != -1) {
+					String value = sliptParameter[i].substring(0, sliptParameter[i].lastIndexOf(","));
+					parameters = push(parameters, value);
+					String key = sliptParameter[i].substring(sliptParameter[i].lastIndexOf(",") + 1);
+					parameters = push(parameters, key);
+				} else {
+					parameters = push(parameters, sliptParameter[i]);
+				}
+			}
+			
+			Map<String, String> arrayToMap = getArrayParam(parameters);
+			System.out.println("param Map : " + arrayToMap);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return params;
+	}
+	
+	private Map<String, String> getArrayParam(String[] array) {
+		System.out.println("param array : " + Arrays.toString(array));
+		Map<String, String> param = new HashMap<String, String>();
+		try {
+			String key = "";
+			for(int i = 0; i < array.length; i++) {
+				if(i % 2 == 0) {
+					key = array[i];
+					System.out.println("key : " + key);
+				} else {
+					System.out.println("value : " + array[i]);
+					param.put(key, array[i]);
+				}
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return param;
+	}
+	
+	private String[] push(String[] arr, String param) {
+		String[] temp = new String[arr.length + 1];
+		try {
+			if(arr.length > 0) {
+				for(int i = 0 ; i < arr.length; i++) {
+					temp[i] = arr[i];
+				}
+			}
+			temp[temp.length - 1] = param;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return temp;
+	} // end push()
 }

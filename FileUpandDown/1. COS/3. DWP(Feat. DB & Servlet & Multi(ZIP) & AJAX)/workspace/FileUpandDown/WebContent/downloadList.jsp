@@ -14,6 +14,7 @@
 	<button onclick="allDownload();">전체 다운로드(압축)</button>
 	<div id="box">
 	<%
+		/*
 		ArrayList<FileDTO> fileList = (ArrayList) request.getAttribute("fileList");
 		
 		if(fileList != null && fileList.size() > 0) { // 업로드 하고 페이지가 자동으로 넘어온 경우
@@ -41,13 +42,11 @@
 							+ "</span>"
 							+ "</a>"
 							+ "&nbsp;"
-							/*
-							+ "<button onclick=\"location.href='/pdfView?fileNam="
-							+ URLEncoder.encode(file.getFileName(), "UTF-8")
-							+ "&fileRealName="
-							+ URLEncoder.encode(file.getFileRealName(), "UTF-8")
-							+ "'\">PDF 보기</button>"
-							*/
+							// + "<button onclick=\"location.href='/pdfView?fileNam="
+							// + URLEncoder.encode(file.getFileName(), "UTF-8")
+							// + "&fileRealName="
+							// + URLEncoder.encode(file.getFileRealName(), "UTF-8")
+							// + "'\">PDF 보기</button>"
 							+ "<button onclick=\"handlePdf('"
 							+ file.getFileRealName()
 							+ "', '"
@@ -83,6 +82,7 @@
 		} else { // downloadList.jsp 로 페이지에 접근한 경우
 			response.sendRedirect("/fileList"); // list를 반환하는 servlet에 접근 후 redirection
 		}
+		*/
 	%>
 	</div>
 	<script>
@@ -105,6 +105,9 @@
 				if(i < boxAList.length - 1) fileNamesStr += ',';
 			}
 			
+			//test
+			fileNamesArr = ['aa', 'bb', 'cc', 'dd', 'ee']
+			fileNamesArr = 'aa,bb,cc,dd,ee';
 			let data = {FILENAMESSTR: fileNamesStr, FILEREALNAMESARR: fileNamesArr};
 			
 			let url = '/createMultiDownList';
