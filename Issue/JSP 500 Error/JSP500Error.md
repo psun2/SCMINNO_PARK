@@ -53,6 +53,8 @@ Stacktrace:
 비고 근본 원인(root cause)의 풀 스택 트레이스를, 서버 로그들에서 확인할 수 있습니다.
 ```
 
+![JSP500Error.png](./image/JSP500Error.png)
+
 ---
 
 ## `발생이유`
