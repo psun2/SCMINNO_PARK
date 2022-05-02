@@ -40,7 +40,6 @@ public class PostUpload extends HttpServlet {
 	    response.setCharacterEncoding("UTF-8");
 	    StringBuilder json = new StringBuilder();
 	    json.append("{\"STATUS\":\"SUCCESS\",\"FORWARD\":\"/downloadList.jsp\"}");
-	    System.out.println(json.toString());
 	    response.getWriter().write(json.toString());
 	}
 

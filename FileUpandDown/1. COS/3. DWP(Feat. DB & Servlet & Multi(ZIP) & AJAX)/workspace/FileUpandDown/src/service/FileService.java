@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -15,11 +16,13 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oreilly.servlet.MultipartRequest;
 import com.oreilly.servlet.multipart.DefaultFileRenamePolicy;
 
 import DAO.FileDAO;
 import DTO.FileDTO;
+import util.ZipUtilCustom;
 
 public class FileService {
 	
@@ -213,72 +216,124 @@ public class FileService {
 	} // end pdfViewer()
 	
 	// 다중 다운로드 전 GET방식으로 보내는 다운로드 특성상 URL의 길이가 초과 될 수 있는 에러 발생 확률이 있음
-	// 이를 방지하기 위하여 GET방식으로 보낼 param을 post방식으로 미리 TEMP table에 insert 합니다
-	public void createMultiDownload(HttpServletRequest request, HttpServletResponse response) {
+	// 다운로드 실행전 미리 파일명들을 DB로 보내 insert
+	public void createMultiDownInsert(HttpServletRequest request, HttpServletResponse response) {
 		try {
 			BufferedReader bufferedReader =  request.getReader();
 			String readLine = null;
 			StringBuilder json = new StringBuilder();
 			while((readLine = bufferedReader.readLine()) != null) {
-				json.append(readLine);
+				json.append(URLDecoder.decode(readLine, "UTF-8"));
 			}
 			
-			Map<String, Object> param = getParamters(json.toString());
+			// Jackson lib 사용
+			Map<String, Object> params = new ObjectMapper().readValue(json.toString(), HashMap.class);
+			
+			String fileNames = (String) params.get("fileNamesStr");
+			String seq = dao.mutilFileInsert(fileNames);
+			response.setContentType("application/json");
+	   		response.setCharacterEncoding("UTF-8");
+	   		
+	   		Map<String, String> result = new HashMap<String, String>();
+	   		String resultJson = "";
+			if(seq != null && !seq.equals("")) {
+				// PK인 시퀀스 반환
+				result.put("SEQ", seq);
+				
+				
+				// jackson 라이브 러리 이용
+				result.put("STATUS", "SUCCESS");
+				resultJson = new ObjectMapper().writeValueAsString(result);
+			} else {
+				// jackson 라이브 러리 이용
+				result.put("STATUS", "FAIL");
+				result.put("MESSAGE", "파일명을 받을 수 없습니다.");	
+				resultJson = new ObjectMapper().writeValueAsString(result);
+			}
+			response.getWriter().write(resultJson);		
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	} // end createMultiDownInsert()
+	
+	// 다중 다운로드 전 GET방식으로 보내는 다운로드 특성상 URL의 길이가 초과 될 수 있는 에러 발생 확률이 있음
+	// 이를 방지하기 위하여 GET방식으로 보낼 param을 post방식으로 미리 TEMP table에 insert 합니다
+	public void createMultiDownload(HttpServletRequest request, HttpServletResponse response) {
+		try {			
+			// file명은 위를 통해 취득했으니 이제 업로드된 서버의 실제 경로를 설정합니다.  
+			String direction = request.getServletContext().getRealPath("/");
+			// String direction = "서버컴퓨터의 local의 사용자 임의 업로드 폴더 경로 설정 하여 보안을 적용 할 수 있습니다.";
+			direction = direction + "upload/";
+			
+			ZipUtilCustom zip = new ZipUtilCustom(request);
+			/*
+			for(String fileName : fileNameArr) {
+				// String fileRealName = dao.getFileRealName(URLDecoder.decode(fileName, "UTF-8"));
+				String fileRealName = URLDecoder.decode(fileName, "UTF-8");
+				File file = new File(direction + fileRealName);
+				zip.compare(file);
+			}
+			*/
+			
+			String seq = request.getParameter("SEQ");
+			String fileNames = dao.getDownloadFileNames(seq);
+			String[] fileNameArr = fileNames.split(",");
+			for(String fileName : fileNameArr) {
+				// String fileRealName = dao.getFileRealName(URLDecoder.decode(fileName, "UTF-8"));
+				String fileRealName = URLDecoder.decode(fileName, "UTF-8");
+				File file = new File(direction + fileRealName);
+				zip.compare(file);
+			}
+			zip.close();
+			
+			File downLoadZip = zip.getDownLoadZipFile();
+			String downLoadZipName = zip.getZipFileName();
+			
+			// 사용자에게 파일을 다운로드 받을시 다시 파일명을 해당 플랫폼에 따라 인코딩 시켜줄수 있도록 encoding을 설정합니다.
+			// 여기서 플랫폼이란 IE, 엣지, 크롬 등을 의미 합니다.
+			String downloadName = null;
+			// 요청온 해더의 유저정보에서 확일 할 수 있습니다.
+			if(request.getHeader("user-agent").indexOf("MISE") != -1) { // MSIE = IE
+				// -1 이 아니라면... 즉, 익스플로러가 아니라면
+				downloadName = new String(downLoadZipName.getBytes("UTF-8"), "8859_1"); // 8859_1 : encoding 방식의 한 종류
+			} else { // 익스플로러 라면....
+				downloadName = new String(downLoadZipName.getBytes("EUC-KR"), "8859_1"); // 8859_1 : encoding 방식의 한 종류
+			}
+			
+			// response(응답)에 대한 header setting
+			StringBuffer sb = new StringBuffer();
+			sb.append("attachment;filename=\"");
+			sb.append(downloadName);
+			sb.append("\"");
+			String contentDisposition = sb.toString();
+			response.setHeader("Content-Disposition", contentDisposition);
+			
+			// 실제로 Stream을 사용하며 사용자 컴퓨터에 다운로드
+			FileInputStream fis = new FileInputStream(downLoadZip);
+			OutputStream os = response.getOutputStream();
+			
+			// Stream은 byte단위로 1024byte로 쪼개서 보낼 수 있도록 합니다.
+			byte[] tempFile = new byte[1024];
+			int data = 0;
+			while((data = fis.read(tempFile, 0, tempFile.length)) != -1) {
+				os.write(tempFile, 0, data);
+			}
+
+			// Stream 종료
+			os.flush();
+			// os.close();
+			// fis.close();
+			
+			// 다운로드가 끝난뒤 다운로드 횟수 증가
+			/*
+			for(String fileName : fileNameArr) {
+				dao.downIncrease(fileName);
+			}
+			*/
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	} // end createMultiDownload()
-	
-	private Map<String, Object> getParamters(String json) {
-		Map<String, Object> params = new HashMap<String, Object>();
-		System.out.println(json);
-		try {
-			// {} 첫번째와 마지막 괄호 지움
-			String replaceJson = json.substring(json.indexOf("{") + 1);
-			replaceJson = replaceJson.substring(0, replaceJson.lastIndexOf("}"));
-			
-			String[] parameters = new String[0];
-			
-			String[] sliptParameter = replaceJson.split(":");
-			System.out.println("sliptParameter : " + Arrays.toString(sliptParameter));
-			for(int i = 0; i < sliptParameter.length; i++) {
-				if(sliptParameter[i].indexOf(",") != -1) {
-					String value = sliptParameter[i].substring(0, sliptParameter[i].lastIndexOf(","));
-					parameters = push(parameters, value);
-					String key = sliptParameter[i].substring(sliptParameter[i].lastIndexOf(",") + 1);
-					parameters = push(parameters, key);
-				} else {
-					parameters = push(parameters, sliptParameter[i]);
-				}
-			}
-			
-			Map<String, String> arrayToMap = getArrayParam(parameters);
-			System.out.println("param Map : " + arrayToMap);
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		return params;
-	}
-	
-	private Map<String, String> getArrayParam(String[] array) {
-		System.out.println("param array : " + Arrays.toString(array));
-		Map<String, String> param = new HashMap<String, String>();
-		try {
-			String key = "";
-			for(int i = 0; i < array.length; i++) {
-				if(i % 2 == 0) {
-					key = array[i];
-					System.out.println("key : " + key);
-				} else {
-					System.out.println("value : " + array[i]);
-					param.put(key, array[i]);
-				}
-			}
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		return param;
-	}
 	
 	private String[] push(String[] arr, String param) {
 		String[] temp = new String[arr.length + 1];

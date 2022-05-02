@@ -25,6 +25,8 @@ public class ZipUtilCustom {
 	
 	private String[] fileNames;
 	
+	private File downloadZip;
+	
 	public ZipUtilCustom(HttpServletRequest request) {
 		try {
 			this.root = request.getServletContext().getRealPath("/");
@@ -33,11 +35,14 @@ public class ZipUtilCustom {
 			this.downloadPath = this.downloadRoot + File.separator + System.currentTimeMillis();
 			
 			File downloadCur = new File(this.downloadPath);
-			if(!downloadCur.exists()) downloadCur.createNewFile();
+			if(!downloadCur.exists()) downloadCur.mkdir();
 			
 			this.downloadZipPath = this.downloadPath + File.separator + this.zipFileName;
-			File downloadZip = new File(downloadZipPath);
+			this.downloadZip = new File(downloadZipPath);
 			if(!downloadZip.exists()) downloadZip.createNewFile();
+			
+			this.fileOutputStream = new FileOutputStream(this.downloadZip);
+			this.zipOutputStream = new ZipOutputStream(this.fileOutputStream);
 			
 			this.fileNames = new String[0];
 		} catch(Exception e) {
@@ -48,10 +53,10 @@ public class ZipUtilCustom {
 	public void compare(File fileOrDirectory) {
 		try {
 			searchDirectory(fileOrDirectory);
-			
-			close();
 		} catch(Exception e) {
 			e.printStackTrace();
+		} finally {
+			// close();
 		}
 	} // end compare()
 	
@@ -100,27 +105,23 @@ public class ZipUtilCustom {
 	
 	private String overlap(String fileName) {
 		try {
-			pushArray(fileName);
-			
 			boolean overlap = false;
-			int index = -1;
+			// int index = -1;
 			String overlapFileName = "";
 			
 			for(int i = 0; i < this.fileNames.length; i++) {
-				for(int j = 0; j < this.fileNames.length; j++) {
-					if(this.fileNames[i].equals(this.fileNames[j])) {
-						overlap = true;
-						index = i;
-						overlapFileName = this.fileNames[i];
-						break;
-					}
-				}
+				if(this.fileNames[i].equals(fileName)) {
+					overlap = true;
+					overlapFileName = this.fileNames[i];
+					break;
+				}				
 			}
 			
 			if(overlap) {
-				fileName = overlapFileName + "_" + System.currentTimeMillis();
-				this.fileNames[index] = fileName;
+				fileName = overlapFileName.substring(0, overlapFileName.lastIndexOf(".")) + "_" + System.currentTimeMillis() + overlapFileName.substring(overlapFileName.lastIndexOf("."));
 			}
+			
+			pushArray(fileName);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -137,7 +138,7 @@ public class ZipUtilCustom {
 		this.fileNames = temp;
 	} // end pushArray()
 	
-	private void close() {
+	public void close() {
 		try {
 			if(zipOutputStream != null) {
 				zipOutputStream.flush();
@@ -165,4 +166,16 @@ public class ZipUtilCustom {
 			e.printStackTrace();
 		}
 	} // end downloadTempDelete()
+	
+	public File getDownLoadZipFile() {
+		return this.downloadZip;
+	} // end getDownLoadZipFile()
+	
+	public String getZipFileName() {
+		return this.zipFileName;
+	} // end getZipFileName()
+	
+	public String getDownLoadPath() {
+		return this.downloadPath;
+	} // end getDownLoadPath()
 }

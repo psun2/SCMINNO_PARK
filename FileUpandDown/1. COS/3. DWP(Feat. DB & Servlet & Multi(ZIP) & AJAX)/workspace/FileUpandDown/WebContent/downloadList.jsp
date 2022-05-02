@@ -14,7 +14,6 @@
 	<button onclick="allDownload();">전체 다운로드(압축)</button>
 	<div id="box">
 	<%
-		/*
 		ArrayList<FileDTO> fileList = (ArrayList) request.getAttribute("fileList");
 		
 		if(fileList != null && fileList.size() > 0) { // 업로드 하고 페이지가 자동으로 넘어온 경우
@@ -82,7 +81,6 @@
 		} else { // downloadList.jsp 로 페이지에 접근한 경우
 			response.sendRedirect("/fileList"); // list를 반환하는 servlet에 접근 후 redirection
 		}
-		*/
 	%>
 	</div>
 	<script>
@@ -98,28 +96,110 @@
 			let fileNamesStr = '';
 			let fileNamesArr = [];
 			for(var i = 0; i < boxAList.length; i++) {
-				let fileRealName = boxAList[i].firstChild.innerText;
+				// let fileRealName = boxAList[i].firstChild.innerText;
+				
+				let href = boxAList[i].href;
+				let fileRealName = href.substring(href.lastIndexOf('=') + 1);
 				
 				fileNamesArr.push(fileRealName);
 				fileNamesStr += fileRealName;
+				
 				if(i < boxAList.length - 1) fileNamesStr += ',';
 			}
 			
-			//test
-			fileNamesArr = ['aa', 'bb', 'cc', 'dd', 'ee']
-			fileNamesArr = 'aa,bb,cc,dd,ee';
-			let data = {FILENAMESSTR: fileNamesStr, FILEREALNAMESARR: fileNamesArr};
+			let data = {
+					fileNamesStr: fileNamesStr,
+					fileNamesArr: fileNamesArr
+			};
 			
-			let url = '/createMultiDownList';
+			//test
+			/*
+			fileNamesArr = ['aa', 'bb', 'cc', 'dd', 'ee']
+			// fileNamesArr = 'aa,bb,cc,dd,ee';
+			let fileNamesMap = {
+					'첫번째 파일': 'aa',
+					'두번째 파일': 'bb',
+					'세번째 파일': 'cc',
+					'네번째 파일': 'dd',
+					'다섯번째 파일': 'ee',
+					'여섯번째 파일': ['aa', 'bb', 'cc', 'dd', 'ee'],
+					'일곱번째 파일': {
+						'첫번째 파일': 'aa',
+						'두번째 파일': 'bb',
+						'세번째 파일': 'cc',
+						'네번째 파일': 'dd',
+						'다섯번째 파일': 'ee',
+						'여섯번째 파일': ['aa', 'bb', 'cc', 'dd', 'ee'],
+					}
+			};
+			
+			data =  {
+					  FILENAMESSTR: "",
+					  FILEREALNAMESARR: ["aa", "bb", "cc", "dd", "ee"],
+					  FILENAMESMAP: {
+					    "첫번째 파일": "aa",
+					    "두번째 파일": "bb",
+					    "세번째 파일": "cc",
+					    "네번째 파일": "dd",
+					    "다섯번째 파일": "ee",
+					    "여섯번째 파일": [
+					      "aa",
+					      "bb",
+					      "cc",
+					      "dd",
+					      ["aa", "bb", "cc", ["aa", "bb", "cc"]]
+					    ],
+					    "일곱번째 파일": {
+					      "첫번째 파일": "aa",
+					      "두번째 파일": "bb",
+					      "세번째 파일": "cc",
+					      "네번째 파일": "dd",
+					      "다섯번째 파일": "ee",
+					      "여섯번째 파일": [
+					        "aa",
+					        "bb",
+					        "cc",
+					        ["aa", "bb", "cc"],
+					        {
+					          "첫번째 파일": "aa",
+					          "두번째 파일": "bb",
+					          "세번째 파일": "cc",
+					          "네번째 파일": "dd",
+					          "다섯번째 파일": "ee",
+					          "여섯번째 파일": ["aa", "bb", "cc", "dd", "ee"]
+					        }
+					      ]
+					    }
+					  },
+					  TEST: [
+					    "aa",
+					    "bb",
+					    "cc",
+					    ["aa", "bb", "cc"],
+					    {
+					      "첫번째 파일": "aa",
+					      "두번째 파일": "bb",
+					      "세번째 파일": "cc",
+					      "네번째 파일": "dd",
+					      "다섯번째 파일": "ee",
+					      "여섯번째 파일": ["aa", "bb", "cc", "dd", "ee"]
+					    }
+					  ]
+					};
+			*/
+			
+			let url = '/createMultiDownInsert';
 			let fetchOption = {method: 'post'};
 			fetchOption.body = JSON.stringify(data);
 			
 			fetch(url, fetchOption) //
 			.then((response) => {
-				console.log(response);
+				return response.json();
 			}) //
 			.then((json) => {
-				
+				console.log(json);
+				// DB저장된 SEQ를 가지고 다운로드 진행
+				location.href = '/createMultiDownList?SEQ=' + json.SEQ;
 			}) //
 			.catch((e) => {
 				console.error(e);
