@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import service.FileService;
 
-@WebServlet("/createMultiDownInsert")
+@WebServlet("/createMultiDownList")
 public class CreateMultiDownInsert extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
