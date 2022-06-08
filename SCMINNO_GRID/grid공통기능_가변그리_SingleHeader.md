@@ -65,7 +65,7 @@ gridList.getGridBox('gridList').setLayout(readonlyType)
 
 ---
 
-## `사조 프로젝트`
+## `사조 프로젝트 기준 사용방법`
 
 사조프로젝트 기준으로 setGrid 아래 custom.init() 함수를 사용하여 손쉽게 사용 하 실 수 있습니다.
 
