@@ -1,6 +1,6 @@
 # `Git LSF(Large File Storage)`
 
-[참조1](https://hbase.tistory.com/221)
+[참조1](https://hbase.tistory.com/221)  
 [참조2](https://newsight.tistory.com/330)
 
 git에 50MB 파일을 업로드시 Warning이 나타나고  
