@@ -30,7 +30,7 @@ git lfs install
 git lfs uninstall
 ```
 
-을 통하여 특정 repository에 lfs를 설치 합니다.
+을 통하여 특정 repository에 lfs를 설치 및 제거를 할 수 있습니다.
 
 ---
 
@@ -47,13 +47,13 @@ git rm --cache
 로 먼저 unstaing을 시킨다음에 track을 해주어야 합니다.
 
 ```
-git ifs track <file path>
-git ifs track <file pattren>
+git lfs track <file path>
+git lfs track <file pattren>
 
 ex)
+git lfs track "image/test.png" // 특정파일을 LFS로 관리
 git lfs track "*.mp4" // 확장자가 mp4인 파일들을 LFS로 관리
 git lfs track "*.jar" // 확장자가 jar인 파일들을 LFS로 관리
-git lfs track "image/test.png" // 특정파일을 LFS로 관리
 ```
 
 track을 해주게 되면 .gitattributes파일이 생성 되는데,
