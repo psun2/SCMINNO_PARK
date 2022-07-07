@@ -377,6 +377,8 @@ public class ExcelXlsRead {
 
 ## `Refactoring`
 
+인터페이스를 잘 활용하면 코드의 수를 획기적으로 줄일 수 있습니다.
+
 ```
 package test;
 
@@ -432,8 +434,9 @@ public class ExcelRead {
 				e.printStackTrace();
 			}
 		}
-	}
+	} // end main()
 
+	// 확장자에 상관없이 workBook class를 받아 excel 파일 읽기
 	static public void excelRead(Workbook workBook) {
 		try {
 			NumberFormat numberFormat = NumberFormat.getInstance();
@@ -515,6 +518,6 @@ public class ExcelRead {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-	} // end xlsxRead()
+	} // end excelRead()
 }
 ```
